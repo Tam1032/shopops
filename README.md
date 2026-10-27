@@ -4,6 +4,10 @@ An agent that reads new customer reviews from Shopee / TikTok Shop / Amazon,
 classifies them, looks up the order or stock when needed, and drafts a public
 reply or hands the case to staff. Nothing is posted until a person approves it.
 
+**Demo:** a customer posts reviews, the agent drafts replies into the approval sheet, staff approve, the reply goes live.
+
+https://github.com/user-attachments/assets/d4a5b637-bf6d-4657-abb5-6c72c19638db
+
 What the project shows:
 
 - **An MCP server written from scratch** (`shopops/mcp_server.py`): the shop's reviews,
