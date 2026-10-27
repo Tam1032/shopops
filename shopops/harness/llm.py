@@ -57,7 +57,7 @@ class OpenAICompatLLM:
         self._next_slot = 0.0
         self._slot_lock = asyncio.Lock()
         # The SDK retries 408/409/429/5xx and connection errors with exponential backoff.
-        self.client = AsyncOpenAI(base_url=base_url, api_key=api_key or "not-needed",
+        self.client = AsyncOpenAI(base_url=base_url or None, api_key=api_key or "not-needed",
                                   max_retries=max_retries, timeout=timeout, http_client=http_client)
 
     @classmethod
