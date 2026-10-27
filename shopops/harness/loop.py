@@ -142,7 +142,11 @@ class Agent:
                     if attempt == self.llm_retries:
                         stop = "llm_error"
                     else:
-                        await asyncio.sleep(self.retry_backoff * 2 ** attempt)
+                        delay = self.retry_backoff * 2 ** attempt
+                        if type(exc).__name__ == "RateLimitError":
+                            # the SDK already retried; a per-minute limit needs a longer pause
+                            delay = max(delay, 20 * (attempt + 1))
+                        await asyncio.sleep(delay)
             if resp is None:
                 break
             usage.add(resp.usage)

@@ -271,9 +271,10 @@
       ],
       "parameters": {
         "chatId": "YOUR_STAFF_CHAT_ID",
-        "text": "=⚠️ Review {{ $json.review_id }} ({{ $json.topic }}) needs staff.\n\"{{ $json.review }}\"\nAgent note: {{ $json.draft }}\nApprove in the sheet, row action_id={{ $json.action_id }}.",
+        "text": "=⚠️ Review <b>{{ $json.review_id }}</b> ({{ $json.topic }}) needs staff.\n\"{{ String($json.review).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}\"\nAgent note: {{ String($json.draft).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}\nApprove in the sheet, row with action id {{ $json.action_id }}.",
         "additionalFields": {
-          "appendAttribution": false
+          "appendAttribution": false,
+          "parse_mode": "HTML"
         }
       },
       "credentials": {

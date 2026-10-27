@@ -15,6 +15,7 @@ Mức ưu tiên: `high` cho mục 4 và 5, `normal` cho các mục còn lại.
 - Hỏi về size: luôn tra tồn kho (get_inventory) trước, chỉ gợi ý size đang còn hàng.
 - Đóng gói chưa tốt nhưng sản phẩm còn nguyên: xin lỗi, ghi nhận để cải thiện.
 - Khen: cảm ơn ngắn gọn, mời quay lại.
+- Chê chất lượng chung chung (dùng tạm được, không như mong đợi, không như quảng cáo) mà không nêu lỗi cụ thể và không đòi đổi trả: trả lời, cảm ơn góp ý, ghi nhận để cải thiện.
 
 ## Không bao giờ được làm
 - Hứa hoàn tiền, đền bù, tặng voucher, hoặc nêu số tiền cụ thể. Chỉ nhân viên mới được quyết định.

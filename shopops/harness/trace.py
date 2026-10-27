@@ -17,5 +17,5 @@ class Tracer:
         event = {"ts": round(time.time(), 3), "run_id": self.run_id, "kind": kind, **data}
         self.events.append(event)
         if self.path:
-            with self.path.open("a") as f:
+            with self.path.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(event, ensure_ascii=False, default=str) + "\n")

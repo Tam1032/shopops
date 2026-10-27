@@ -57,6 +57,24 @@ python -m shopops.evals --model env --judge judge-env
 export LLM_BASE_URL=http://localhost:8001/v1 LLM_MODEL=Qwen/Qwen3-8B   # vllm serve ... --enable-auto-tool-choice --tool-call-parser hermes
 ```
 
+On Windows (PowerShell), the same steps:
+
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1      # if blocked: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+pip install -e ".[dev]"
+pytest -q
+python -m shopops.evals --model baseline
+$env:LLM_MODEL = "gpt-4.1-mini"; $env:LLM_API_KEY = "sk-..."
+python -m shopops.evals --model env
+```
+
+On a new OpenAI account (free tier: 10 requests/min) cap the rate on the client side,
+e.g. `$env:LLM_RPM = "8"; $env:JUDGE_RPM = "8"`, and run with `--concurrency 1`.
+
+`make` is not available on Windows; `make demo` is
+`curl.exe -X POST "http://localhost:8000/admin/release?n=3"`.
+
 Run the services:
 
 ```bash
@@ -126,8 +144,16 @@ the repo's Actions variables; the report goes to the job summary and an artifact
 | Model | Action acc. | Topic acc. | Tool recall | Forbidden actions | Judge |
 |---|---|---|---|---|---|
 | Keyword baseline | 0.969 | 0.781 | 1.00 | 3.1% | n/a |
-| gpt-4.1-mini | TODO | | | | |
+| gpt-4.1-mini | 1.00 | 0.969 | 1.00 | 0% | 4.92 / 5 |
 | Qwen3-8B on vLLM | TODO | | | | |
+
+gpt-4.1-mini: 3.6 steps, ~5k tokens and ~3.7 s (p50) per review.
+
+The first gpt-4.1-mini run scored 0.81 action accuracy. Five times the model called
+`submit_triage` with action "reply" without ever calling `post_reply`; the eval caught it
+because it scores the marketplace state, not the model's claim. `submit_triage` now refuses
+an action that was not carried out. The sixth miss (R012, "không như quảng cáo") came from
+a policy that did not say whether a vague quality complaint is a defect; the policy now does.
 
 The keyword rules were written while looking at these 32 cases, so the baseline
 row is a pipeline check, not a fair baseline. Grow the golden set with unseen

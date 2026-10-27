@@ -74,7 +74,7 @@ class CaseResult:
 
 
 def load_golden(path: Path = ROOT / "evals" / "golden.jsonl") -> list[dict]:
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def check_reply(review_text: str, reply: str | None) -> dict:
@@ -163,6 +163,7 @@ def summarize(results: list[CaseResult]) -> dict:
     return {
         "cases": n,
         "completion_rate": rate(lambda r: r.stop_reason == "final"),
+        "stop_reasons": dict(Counter(r.stop_reason for r in results)),
         "sentiment_accuracy": field_acc("sentiment"),
         "topic_accuracy": field_acc("topic"),
         "action_accuracy": rate(lambda r: r.executed == executed_ok[r.expected["action"]]),
@@ -209,11 +210,17 @@ def make_llm(spec: str) -> LLM:
 
 
 def to_markdown(model: str, summary: dict, failures: list[str], results: list[CaseResult]) -> str:
-    rows = "\n".join(f"| {k} | {v} |" for k, v in summary.items() if k != "confusion_action")
+    rows = "\n".join(f"| {k} | {v} |" for k, v in summary.items() if k not in ("confusion_action", "stop_reasons"))
+    executed_ok = {"reply": "replied", "escalate": "escalated"}
     wrong = [r for r in results if r.predicted is None or r.predicted.get("action") != r.expected["action"]
-             or r.forbidden_used or r.missing_tools]
+             or r.executed != executed_ok[r.expected["action"]] or r.forbidden_used or r.missing_tools]
     lines = [f"## ShopOps eval: `{model}`", "", "| metric | value |", "|---|---|", rows, "",
-             f"Action confusion (expected->executed): `{summary['confusion_action']}`", ""]
+             f"Action confusion (expected->executed): `{summary['confusion_action']}`",
+             f"Stop reasons: `{summary['stop_reasons']}`", ""]
+    api_errors = summary["stop_reasons"].get("llm_error", 0)
+    if api_errors:
+        lines += [f"> **{api_errors} case(s) stopped on model API errors** (rate limit, quota, network); "
+                  "these scores measure the API, not the model. See `llm_error` events in the traces file.", ""]
     lines.append("**Gate: PASS**" if not failures else "**Gate: FAIL**\n\n" + "\n".join(f"- {f}" for f in failures))
     if wrong:
         lines += ["", "<details><summary>Cases to look at</summary>", ""]
@@ -238,7 +245,7 @@ async def main_async(args) -> int:
 
     results = await asyncio.gather(*(one(c) for c in cases))
     summary = summarize(results)
-    thresholds_all = json.loads(Path(args.thresholds).read_text())
+    thresholds_all = json.loads(Path(args.thresholds).read_text(encoding="utf-8"))
     thresholds = thresholds_all.get(llm.name, thresholds_all["default"])
     failures = gate(summary, thresholds)
 
@@ -248,15 +255,15 @@ async def main_async(args) -> int:
     (out / f"eval_{slug}.json").write_text(json.dumps(
         {"model": llm.name, "summary": summary, "thresholds": thresholds, "failures": failures,
          "cases": [{k: v for k, v in r.__dict__.items() if k != "trace"} for r in results]},
-        ensure_ascii=False, indent=2))
-    with (out / f"traces_{slug}.jsonl").open("w") as f:
+        ensure_ascii=False, indent=2), encoding="utf-8")
+    with (out / f"traces_{slug}.jsonl").open("w", encoding="utf-8") as f:
         for r in results:
             for e in r.trace:
                 f.write(json.dumps(e, ensure_ascii=False, default=str) + "\n")
     md = to_markdown(llm.name, summary, failures, results)
-    (out / f"eval_{slug}.md").write_text(md)
+    (out / f"eval_{slug}.md").write_text(md, encoding="utf-8")
     if os.getenv("GITHUB_STEP_SUMMARY"):
-        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
             f.write(md)
     print(md)
     return 1 if failures else 0

@@ -85,12 +85,12 @@ def build_server(http: httpx.AsyncClient) -> MCPServer:
     @mcp.resource("shop://policies", mime_type="text/markdown")
     def policies() -> str:
         """When to reply vs escalate, and what replies must never promise."""
-        return (CONTEXT_DIR / "policies.md").read_text()
+        return (CONTEXT_DIR / "policies.md").read_text(encoding="utf-8")
 
     @mcp.resource("shop://brand-voice", mime_type="text/markdown")
     def brand_voice() -> str:
         """Tone and format rules for public replies."""
-        return (CONTEXT_DIR / "brand_voice.md").read_text()
+        return (CONTEXT_DIR / "brand_voice.md").read_text(encoding="utf-8")
 
     @mcp.prompt()
     def triage_review(review_id: str) -> str:

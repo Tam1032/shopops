@@ -20,3 +20,6 @@ async def test_release_moves_backlog():
         out = (await http.post("/admin/release", params={"n": 1})).json()
         assert out["released"] == ["R003"]
         assert (await http.get("/reviews")).json()["total"] == 3
+        reset = (await http.post("/admin/reset", params={"released": 2})).json()
+        assert reset["backlog"] == 30
+        assert (await http.post("/admin/release", params={"n": 1})).json()["released"] == ["R003"]

@@ -29,10 +29,10 @@ def main() -> None:
     args = p.parse_args()
 
     rng = random.Random(args.seed)
-    catalog = json.loads((DATA / "catalog.json").read_text())
+    catalog = json.loads((DATA / "catalog.json").read_text(encoding="utf-8"))
     skus = [prod["sku"] for prod in catalog["products"]]
     reviews_path = DATA / "reviews.jsonl"
-    existing = [json.loads(line) for line in reviews_path.read_text().splitlines() if line]
+    existing = [json.loads(line) for line in reviews_path.read_text(encoding="utf-8").splitlines() if line]
     next_id = len(existing) + 1
 
     with open(args.csv, newline="", encoding="utf-8") as f:
@@ -54,8 +54,8 @@ def main() -> None:
         next_id += 1
 
     catalog["orders"] += new_orders
-    (DATA / "catalog.json").write_text(json.dumps(catalog, ensure_ascii=False, indent=2))
-    with reviews_path.open("a") as f:
+    (DATA / "catalog.json").write_text(json.dumps(catalog, ensure_ascii=False, indent=2), encoding="utf-8")
+    with reviews_path.open("a", encoding="utf-8") as f:
         for r in new_reviews:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
     print(f"added {len(new_reviews)} reviews")

@@ -6,7 +6,7 @@ from pathlib import Path
 from mcp import Client
 
 from shopops.harness.llm import LLM
-from shopops.harness.loop import Agent, Confirmer, RunResult, ToolSpec, auto_approve
+from shopops.harness.loop import Agent, Confirmer, Decision, PendingAction, RunResult, ToolSpec, auto_approve
 from shopops.harness.mcp_tools import load_mcp_tools
 from shopops.harness.trace import Tracer
 
@@ -15,6 +15,7 @@ CONTEXT_DIR = Path(__file__).resolve().parent.parent / "context"
 SENTIMENTS = ["positive", "neutral", "negative"]
 TOPICS = ["delivery", "quality", "size_fit", "packaging", "wrong_item", "service", "praise", "other"]
 ACTIONS = ["reply", "escalate"]
+ACTION_TOOLS = {"reply": "post_reply", "escalate": "escalate_to_human"}
 AGENT_TOOLS = {"get_review", "get_order", "get_inventory", "post_reply", "escalate_to_human"}
 
 SUBMIT_SCHEMA = {
@@ -46,11 +47,11 @@ fake, skin reaction), size_fit, packaging (box or wrapping damaged, product fine
 item), service (shop's chat or support), praise (general compliments with no specific issue), other.
 
 <policy>
-{(CONTEXT_DIR / "policies.md").read_text()}
+{(CONTEXT_DIR / "policies.md").read_text(encoding="utf-8")}
 </policy>
 
 <brand_voice>
-{(CONTEXT_DIR / "brand_voice.md").read_text()}
+{(CONTEXT_DIR / "brand_voice.md").read_text(encoding="utf-8")}
 </brand_voice>
 """
 
@@ -78,12 +79,43 @@ async def build_agent(llm: LLM, mcp: Client, *, confirmer: Confirmer = auto_appr
                       tracer: Tracer | None = None, max_steps: int = 8) -> Agent:
     tools = await load_mcp_tools(mcp, allow=AGENT_TOOLS)
 
+    # The side effect this run actually took (ran, queued for approval, or declined by a human),
+    # so submit_triage cannot report an action the agent never carried out.
+    taken: set[str] = set()
+
+    def track(spec: ToolSpec) -> ToolSpec:
+        handler = spec.handler
+
+        async def run_and_record(args: dict) -> str:
+            result = await handler(args)
+            taken.add(spec.name)
+            return result
+
+        spec.handler = run_and_record
+        return spec
+
+    tools = [track(t) if t.name in ACTION_TOOLS.values() else t for t in tools]
+
+    async def recording_confirmer(action: PendingAction) -> Decision:
+        decision = await confirmer(action)
+        if decision.status != "approved":
+            taken.add(action.tool)
+        return decision
+
     async def submit(args: dict) -> str:
+        expected = ACTION_TOOLS[args["action"]]
+        if expected not in taken:
+            other = [t for t in taken if t != expected]
+            if other:
+                raise ValueError(f"you called {other[0]}, so action must be "
+                                 f"{next(a for a, t in ACTION_TOOLS.items() if t == other[0])!r}")
+            raise ValueError(f"action is {args['action']!r} but {expected} has not run; "
+                             f"call {expected} first, then submit_triage")
         return "recorded"
 
     tools.append(ToolSpec("submit_triage", "Record your classification and finish. Call it last, once.",
                           SUBMIT_SCHEMA, submit, final=True))
-    return Agent(llm, tools, system_prompt(), confirmer=confirmer, guards=[reply_guard],
+    return Agent(llm, tools, system_prompt(), confirmer=recording_confirmer, guards=[reply_guard],
                  max_steps=max_steps, tracer=tracer)
 
 

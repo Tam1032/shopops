@@ -26,6 +26,21 @@ async def test_happy_path_posts_reply(mcp, store):
     assert store.reviews["R003"]["status"] == "replied"
 
 
+async def test_submit_must_match_the_action_taken(mcp, store):
+    llm = ScriptedLLM([
+        say(call("get_review", {"review_id": "R012"})),
+        say(call("submit_triage", SUBMIT)),  # says "reply" but never replied
+        say(call("escalate_to_human", {"review_id": "R012", "reason": "quality", "priority": "normal"})),
+        say(call("submit_triage", SUBMIT)),  # escalated, still says "reply"
+        say(call("submit_triage", SUBMIT | {"action": "escalate"})),
+    ])
+    run = await triage(await build_agent(llm, mcp), "R012")
+    errors = [m["content"] for m in run.messages if m["role"] == "tool" and m["content"].startswith("Error")]
+    assert "post_reply has not run" in errors[0] and "action must be 'escalate'" in errors[1]
+    assert run.stop_reason == "final" and run.final["action"] == "escalate"
+    assert store.reviews["R012"]["status"] == "escalated"
+
+
 async def test_bad_json_and_schema_errors_go_back_to_model(mcp):
     llm = ScriptedLLM([
         say(call("get_order", "{not json")),
@@ -145,5 +160,5 @@ async def test_tracer_records_steps(mcp, tmp_path):
     tracer = Tracer(tmp_path / "t.jsonl", run_id="R001")
     llm = ScriptedLLM([say(call("get_review", {"review_id": "R001"})), say(call("submit_triage", SUBMIT))])
     await triage(await build_agent(llm, mcp, tracer=tracer), "R001")
-    kinds = [json.loads(line)["kind"] for line in (tmp_path / "t.jsonl").read_text().splitlines()]
+    kinds = [json.loads(line)["kind"] for line in (tmp_path / "t.jsonl").read_text(encoding="utf-8").splitlines()]
     assert kinds[0] == "run_start" and kinds[-1] == "run_end" and "tool" in kinds

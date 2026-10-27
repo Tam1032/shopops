@@ -5,3 +5,4 @@ reports/*
 !reports/.gitkeep
 actions.sqlite
 traces/
+.env

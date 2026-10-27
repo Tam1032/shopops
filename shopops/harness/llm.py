@@ -5,8 +5,10 @@ tool-calling format: OpenAI, a self-hosted vLLM (`--enable-auto-tool-choice`),
 Ollama, and Anthropic's OpenAI-compatible endpoint.
 """
 
+import asyncio
 import json
 import os
+import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Protocol
@@ -44,11 +46,16 @@ class LLM(Protocol):
 
 class OpenAICompatLLM:
     def __init__(self, model: str, base_url: str | None = None, api_key: str | None = None,
-                 temperature: float = 0.0, max_retries: int = 3, timeout: float = 60, http_client=None):
+                 temperature: float = 0.0, max_retries: int = 3, timeout: float = 60, http_client=None,
+                 rpm: float = 0):
         from openai import AsyncOpenAI
 
         self.name = model
         self.temperature = temperature
+        # Client-side requests-per-minute cap (0 = off), shared by every concurrent run on this client.
+        self.min_interval = 60 / rpm if rpm else 0.0
+        self._next_slot = 0.0
+        self._slot_lock = asyncio.Lock()
         # The SDK retries 408/409/429/5xx and connection errors with exponential backoff.
         self.client = AsyncOpenAI(base_url=base_url, api_key=api_key or "not-needed",
                                   max_retries=max_retries, timeout=timeout, http_client=http_client)
@@ -59,12 +66,26 @@ class OpenAICompatLLM:
             model=os.environ[f"{prefix}_MODEL"],
             base_url=os.getenv(f"{prefix}_BASE_URL"),
             api_key=os.getenv(f"{prefix}_API_KEY") or os.getenv("OPENAI_API_KEY"),
+            # raise on low-tier accounts that hit 429 often; the SDK honours Retry-After
+            max_retries=int(os.getenv(f"{prefix}_MAX_RETRIES", "3")),
+            rpm=float(os.getenv(f"{prefix}_RPM", "0")),
         )
+
+    async def _wait_for_slot(self) -> None:
+        if not self.min_interval:
+            return
+        async with self._slot_lock:
+            now = time.monotonic()
+            wait = self._next_slot - now
+            self._next_slot = max(now, self._next_slot) + self.min_interval
+        if wait > 0:
+            await asyncio.sleep(wait)
 
     async def complete(self, messages: list[dict], tools: list[dict]) -> LLMResponse:
         kwargs = {"model": self.name, "messages": messages, "temperature": self.temperature}
         if tools:
             kwargs["tools"] = tools
+        await self._wait_for_slot()
         resp = await self.client.chat.completions.create(**kwargs)
         msg = resp.choices[0].message
         calls = [ToolCall(tc.id, tc.function.name, tc.function.arguments or "{}") for tc in (msg.tool_calls or [])]
