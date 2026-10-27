@@ -21,8 +21,8 @@ What the project shows:
   per-case isolated marketplace, deterministic checks plus LLM-as-judge, thresholds
   that fail the build.
 - **n8n automation** (`n8n/`): webhook and schedule triggers, Google Sheets as the
-  approval queue, Telegram alerts. Both workflows were imported and executed on
-  n8n 2.44.7 against the running services (see `n8n/README.md`).
+  approval queue, Telegram alerts. Run end to end on n8n 2.44.7 with a real Google
+  Sheet and Telegram bot (the demo above; setup in `n8n/README.md`).
 
 ```mermaid
 flowchart LR
@@ -49,7 +49,7 @@ HTTP calls in `mcp_server.py`; the harness, evals and n8n flows stay the same.
 
 ```bash
 pip install -e '.[dev]'
-pytest -q                                  # 22 tests, no API key needed
+pytest -q                                  # 24 tests, no API key needed
 python -m shopops.evals --model baseline   # full agent -> MCP -> marketplace loop, keyword rules as the "model"
 
 # real model (any OpenAI-compatible server)
@@ -66,8 +66,8 @@ On Windows (PowerShell), the same steps:
 ```powershell
 py -3.12 -m venv .venv
 .venv\Scripts\Activate.ps1      # if blocked: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-pip install -e ".[dev]"
-pytest -q
+python -m pip install -e ".[dev]"
+python -m pytest -q
 python -m shopops.evals --model baseline
 $env:LLM_MODEL = "gpt-4.1-mini"; $env:LLM_API_KEY = "sk-..."
 python -m shopops.evals --model env
@@ -77,7 +77,8 @@ On a new OpenAI account (free tier: 10 requests/min) cap the rate on the client 
 e.g. `$env:LLM_RPM = "8"; $env:JUDGE_RPM = "8"`, and run with `--concurrency 1`.
 
 `make` is not available on Windows; `make demo` is
-`curl.exe -X POST "http://localhost:8000/admin/release?n=3"`.
+`curl.exe -X POST "http://localhost:8000/admin/release?n=3"`, and
+`curl.exe -X POST http://localhost:8000/admin/reset` puts the backlog back to replay the demo.
 
 Run the services:
 
@@ -110,9 +111,11 @@ Use the MCP server from Claude Desktop (`claude_desktop_config.json`):
 | Tool raises (marketplace 404, timeout) | Error text returned to the model; the run goes on |
 | Policy guard fails (reply promises a refund or voucher, too long) | Call blocked before it runs, reason returned |
 | Tool is not read-only (MCP `readOnlyHint` false) | Goes to the Confirmer: approve, approve with edited arguments, reject, or defer to a human queue |
+| Final `submit_triage` claims an action that never ran (says "reply", no `post_reply`) | Refused; the model is told which tool to call first |
 | Same call repeated more than `max_repeats` times | Run stops with `loop_detected` |
 | Model answers in prose instead of calling the final tool | One reminder, then stop |
-| Model API fails | Retried with backoff (SDK retries 429/5xx first) |
+| Model API fails | Retried with backoff (SDK retries 429/5xx and honours Retry-After first; rate limits get a longer pause) |
+| Low API rate limit | Optional client-side cap: `LLM_RPM` requests per minute, shared by concurrent runs |
 
 Which tools need confirmation comes from the MCP server's tool annotations, so a
 new side-effect tool is gated without changing the harness.
@@ -148,10 +151,12 @@ the repo's Actions variables; the report goes to the job summary and an artifact
 | Model | Action acc. | Topic acc. | Tool recall | Forbidden actions | Judge |
 |---|---|---|---|---|---|
 | Keyword baseline | 0.969 | 0.781 | 1.00 | 3.1% | n/a |
-| gpt-4.1-mini | 1.00 | 0.969 | 1.00 | 0% | 4.92 / 5 |
-| Qwen3-8B on vLLM | TODO | | | | |
+| gpt-4.1-mini | 1.00 | 0.969 | 1.00 | 0% | 4.93 / 5 |
+| Qwen3-8B on vLLM | not run yet | | | | |
 
-gpt-4.1-mini: 3.6 steps, ~5k tokens and ~3.7 s (p50) per review.
+gpt-4.1-mini: 3.5 steps, ~4.9k tokens and ~3.1 s (p50) per review, judged by gpt-4.1.
+The same numbers came out of a local run and of the CI `eval-model` job (judge 4.92 vs
+4.93), so the gate is stable enough to run on every push.
 
 The first gpt-4.1-mini run scored 0.81 action accuracy. Five times the model called
 `submit_triage` with action "reply" without ever calling `post_reply`; the eval caught it
