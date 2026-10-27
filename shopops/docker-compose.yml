@@ -1,0 +1,43 @@
+# marketplace (mock seller API) -> MCP server -> agent API <- n8n
+services:
+  marketplace:
+    build: .
+    command: uvicorn shopops.marketplace:app --host 0.0.0.0 --port 8000
+    environment:
+      RELEASED_REVIEWS: "8"
+      REVIEW_WEBHOOK_URL: http://n8n:5678/webhook/shopops-review
+    ports: ["8000:8000"]
+
+  mcp:
+    build: .
+    command: python -m shopops.mcp_server --http 8100
+    environment:
+      MARKETPLACE_URL: http://marketplace:8000
+    ports: ["8100:8100"]
+    depends_on: [marketplace]
+
+  agent:
+    build: .
+    environment:
+      MARKETPLACE_URL: http://marketplace:8000
+      MCP_URL: http://mcp:8100/mcp
+      ACTIONS_DB: /data/actions.sqlite
+      TRACE_DIR: /data/traces
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+    volumes: ["agent-data:/data"]
+    ports: ["8200:8200"]
+    depends_on: [mcp]
+
+  n8n:
+    image: n8nio/n8n:2.44.7
+    environment:
+      N8N_SECURE_COOKIE: "false"
+      GENERIC_TIMEZONE: Asia/Ho_Chi_Minh
+    ports: ["5678:5678"]
+    volumes: ["n8n-data:/home/node/.n8n", "./n8n:/workflows:ro"]
+
+volumes:
+  agent-data:
+  n8n-data:

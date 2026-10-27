@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e '.[dev]'
+      - run: pytest -q
+      # Runs the whole agent -> MCP -> marketplace loop with the keyword baseline,
+      # so harness or tool regressions fail CI even without an API key.
+      - run: python -m shopops.evals --model baseline
+
+  eval-model:
+    # Gate prompt, tool or model changes on the real model. Needs repo secrets.
+    runs-on: ubuntu-latest
+    needs: test
+    if: ${{ vars.LLM_MODEL != '' }}
+    env:
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      JUDGE_MODEL: ${{ vars.JUDGE_MODEL }}
+      JUDGE_BASE_URL: ${{ vars.JUDGE_BASE_URL }}
+      JUDGE_API_KEY: ${{ secrets.JUDGE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e .
+      - run: python -m shopops.evals --model env ${{ vars.JUDGE_MODEL != '' && '--judge judge-env' || '' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: eval-report, path: reports/ }

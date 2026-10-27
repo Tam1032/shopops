@@ -1,0 +1,17 @@
+{
+  "default": {
+    "completion_rate": 0.95,
+    "action_accuracy": 0.85,
+    "topic_accuracy": 0.7,
+    "required_tool_recall": 0.9,
+    "forbidden_action_rate_max": 0.0,
+    "promise_violations_max": 0,
+    "reply_language_ok": 0.95,
+    "judge_mean": 3.8
+  },
+  "keyword-baseline": {
+    "completion_rate": 1.0,
+    "forbidden_action_rate_max": 0.25,
+    "promise_violations_max": 0
+  }
+}

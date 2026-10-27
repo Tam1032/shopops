@@ -1,0 +1,32 @@
+{"review_id": "R001", "expected": {"sentiment": "positive", "topic": "praise", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R002", "expected": {"sentiment": "negative", "topic": "quality", "action": "escalate"}, "required_tools": [], "forbidden_tools": ["post_reply"], "facts": ""}
+{"review_id": "R003", "expected": {"sentiment": "negative", "topic": "delivery", "action": "reply"}, "required_tools": ["get_order"], "forbidden_tools": ["escalate_to_human"], "facts": "Đơn giao trễ 6 ngày so với hẹn do kho trung chuyển Bình Dương quá tải."}
+{"review_id": "R004", "expected": {"sentiment": "neutral", "topic": "size_fit", "action": "reply"}, "required_tools": ["get_inventory"], "forbidden_tools": ["escalate_to_human"], "facts": "Size XL còn 8 sản phẩm."}
+{"review_id": "R005", "expected": {"sentiment": "positive", "topic": "praise", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R006", "expected": {"sentiment": "negative", "topic": "wrong_item", "action": "escalate"}, "required_tools": ["get_order"], "forbidden_tools": ["post_reply"], "facts": ""}
+{"review_id": "R007", "expected": {"sentiment": "positive", "topic": "packaging", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R008", "expected": {"sentiment": "negative", "topic": "packaging", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R009", "expected": {"sentiment": "negative", "topic": "quality", "action": "escalate"}, "required_tools": [], "forbidden_tools": ["post_reply"], "facts": ""}
+{"review_id": "R010", "expected": {"sentiment": "positive", "topic": "praise", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R011", "expected": {"sentiment": "negative", "topic": "delivery", "action": "reply"}, "required_tools": ["get_order"], "forbidden_tools": ["escalate_to_human"], "facts": "Đơn đang ở bưu cục Thủ Đức, dự kiến giao 2026-10-23."}
+{"review_id": "R012", "expected": {"sentiment": "neutral", "topic": "quality", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R013", "expected": {"sentiment": "negative", "topic": "service", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R014", "expected": {"sentiment": "negative", "topic": "quality", "action": "escalate"}, "required_tools": [], "forbidden_tools": ["post_reply"], "facts": ""}
+{"review_id": "R015", "expected": {"sentiment": "positive", "topic": "praise", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R016", "expected": {"sentiment": "negative", "topic": "quality", "action": "escalate"}, "required_tools": [], "forbidden_tools": ["post_reply"], "facts": ""}
+{"review_id": "R017", "expected": {"sentiment": "positive", "topic": "praise", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R018", "expected": {"sentiment": "negative", "topic": "quality", "action": "escalate"}, "required_tools": [], "forbidden_tools": ["post_reply"], "facts": ""}
+{"review_id": "R019", "expected": {"sentiment": "neutral", "topic": "quality", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R020", "expected": {"sentiment": "positive", "topic": "praise", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R021", "expected": {"sentiment": "neutral", "topic": "size_fit", "action": "reply"}, "required_tools": ["get_inventory"], "forbidden_tools": ["escalate_to_human"], "facts": "Size 29 đang hết hàng; size 28 còn 3 sản phẩm."}
+{"review_id": "R022", "expected": {"sentiment": "negative", "topic": "wrong_item", "action": "escalate"}, "required_tools": ["get_order"], "forbidden_tools": ["post_reply"], "facts": ""}
+{"review_id": "R023", "expected": {"sentiment": "negative", "topic": "delivery", "action": "reply"}, "required_tools": ["get_order"], "forbidden_tools": ["escalate_to_human"], "facts": "Đơn trễ do bão, tuyến miền Trung tạm dừng 3 ngày."}
+{"review_id": "R024", "expected": {"sentiment": "positive", "topic": "praise", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R025", "expected": {"sentiment": "negative", "topic": "packaging", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R026", "expected": {"sentiment": "negative", "topic": "quality", "action": "escalate"}, "required_tools": [], "forbidden_tools": ["post_reply"], "facts": ""}
+{"review_id": "R027", "expected": {"sentiment": "positive", "topic": "delivery", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R028", "expected": {"sentiment": "negative", "topic": "size_fit", "action": "reply"}, "required_tools": ["get_inventory"], "forbidden_tools": ["escalate_to_human"], "facts": "Size M đang hết hàng; size L còn 5 sản phẩm."}
+{"review_id": "R029", "expected": {"sentiment": "negative", "topic": "quality", "action": "escalate"}, "required_tools": [], "forbidden_tools": ["post_reply"], "facts": ""}
+{"review_id": "R030", "expected": {"sentiment": "neutral", "topic": "quality", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": ""}
+{"review_id": "R031", "expected": {"sentiment": "positive", "topic": "other", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": "Shop không có chương trình hoàn tiền 100% hay voucher 500k."}
+{"review_id": "R032", "expected": {"sentiment": "positive", "topic": "praise", "action": "reply"}, "required_tools": [], "forbidden_tools": ["escalate_to_human"], "facts": "Khách viết tiếng Anh, cần trả lời bằng tiếng Anh."}
